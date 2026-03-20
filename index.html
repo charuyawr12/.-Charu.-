@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday Janu!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Pinyon+Script&family=Parisienne&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-pink: #f4abbc; 
+            --cake-brown: #6d4c41; /* Deeper brown for contrast */
+            --cream-white: #fffaff;
+            --candle-red: #e53935;
+        }
+
+        body {
+            background-color: var(--bg-pink);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Times New Roman', serif;
+            overflow: hidden;
+            transition: background-color 2s ease;
+        }
+
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        #confetti-canvas { z-index: 10; }
+        #starCanvas { z-index: 1; opacity: 0; transition: opacity 2s ease; }
+        #heartCanvas { z-index: 20; opacity: 0; transition: opacity 3s ease; }
+
+        /* --- SCENE: CAKE --- */
+        .scene-cake {
+            position: absolute;
+            text-align: center;
+            z-index: 5;
+            transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .cake { position: relative; width: 200px; height: 180px; margin: 0 auto 30px auto; transform-style: preserve-3d; }
+        .layer { position: absolute; background: var(--cake-brown); width: 100%; border-radius: 8px; box-shadow: inset 0 -5px 10px rgba(0,0,0,0.2); }
+        .layer-bottom { height: 60px; bottom: 0; animation: drop-solid 0.8s ease-out forwards; }
+        .layer-top { height: 50px; bottom: 65px; animation: drop-solid 0.8s ease-out forwards; animation-delay: 0.6s; }
+        
+        .cream-drip { position: absolute; background: var(--cream-white); width: 100%; height: 15px; border-radius: 20px; z-index: 2; opacity: 0; }
+        .cream-1 { bottom: 55px; animation: fadeIn 0.5s forwards; animation-delay: 0.4s; }
+        .cream-2 { bottom: 110px; animation: fadeIn 0.5s forwards; animation-delay: 1s; }
+
+        .candle { 
+            position: absolute; bottom: 115px; left: 50%; transform: translateX(-50%); 
+            width: 12px; height: 45px; background: repeating-linear-gradient(45deg, #fff, #fff 5px, var(--candle-red) 5px, var(--candle-red) 10px);
+            border-radius: 3px; animation: drop-solid 0.5s ease-out forwards; animation-delay: 1.5s; opacity: 0;
+        }
+        
+        .flame { 
+            position: absolute; top: -20px; left: 50%; transform: translateX(-50%); 
+            width: 16px; height: 24px; background: #ff9800; border-radius: 50% 50% 20% 20%; 
+            box-shadow: 0 0 20px #ff5722; animation: flicker 0.1s infinite alternate, ignite 0.5s forwards; 
+            animation-delay: 2s; opacity: 0; cursor: cell;
+        }
+
+        .instruction { color: white; font-size: 0.9rem; margin-top: 10px; opacity: 0; animation: fadeIn 1s forwards 2.5s; }
+
+        /* --- SCENE: ENVELOPE & LETTER --- */
+        .scene-letter { position: fixed; width: 100%; height: 100%; display: none; justify-content: center; align-items: center; z-index: 30; }
+        
+        .envelope-wrapper { 
+            width: 300px; height: 200px; transition: transform 1s ease-in-out; 
+            transform-style: preserve-3d; cursor: pointer;
+        }
+
+        .envelope-wrapper.open-anim { transform: scale(4) rotateY(10deg); opacity: 0; pointer-events: none; }
+
+        .envelope { position: relative; width: 100%; height: 100%; background: #fff; border-radius: 5px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .flap { 
+            position: absolute; top: 0; left: 0; width: 0; height: 0; 
+            border-left: 150px solid transparent; border-right: 150px solid transparent; 
+            border-top: 120px solid #f5f5f5; z-index: 4; transition: transform 0.6s; transform-origin: top;
+        }
+        .envelope:hover .flap { transform: rotateX(160deg); }
+
+        .vintage-page { 
+            position: relative; width: 90%; height: 85%; max-width: 600px; 
+            background: #fdf5e6; padding: 40px; border: 2px solid #d2b48c;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8); overflow-y: auto;
+            transform: scale(0.9); opacity: 0; transition: all 1s ease;
+        }
+        .vintage-page.show { transform: scale(1); opacity: 1; }
+
+        /* --- ANIMATIONS --- */
+        @keyframes drop-solid { from { transform: translate(-50%, -500px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+        @keyframes ignite { from { transform: translateX(-50%) scale(0); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
+        @keyframes flicker { 0% { transform: translateX(-50%) scale(1); opacity: 0.9; } 100% { transform: translateX(-50%) scale(1.1); opacity: 1; } }
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <canvas id="confetti-canvas"></canvas>
+    <canvas id="starCanvas"></canvas>
+    <canvas id="heartCanvas"></canvas>
+
+    <div class="scene-cake" id="cake-scene" onclick="blowCandle()">
+        <div class="cake">
+            <div class="layer layer-bottom"></div>
+            <div class="cream-drip cream-1"></div>
+            <div class="layer layer-top"></div>
+            <div class="cream-drip cream-2"></div>
+            <div class="candle"><div class="flame" id="flame"></div></div>
+        </div>
+        <h1 style="color:white; font-family:'Parisienne'">Happy 19th Birthday Janu!</h1>
+        <p class="instruction">Tap the flame to make a wish...</p>
+    </div>
+
+    <div class="scene-letter" id="letter-scene">
+        <div class="envelope-wrapper" id="env-wrap" onclick="openLetter()">
+            <div class="envelope">
+                <div class="flap"></div>
+                <div class="heart-seal" style="position:absolute; top:40%; left:50%; transform:translateX(-50%); color:red; font-size:40px;">♥</div>
+            </div>
+        </div>
+
+        <div class="vintage-page" id="letter-body">
+            <h2 style="font-family:'Parisienne'; font-size: 3rem; color: #4b3621;">To My Janu</h2>
+            <div style="font-family:'Pinyon Script'; font-size: 1.8rem; color: #3d2b1f; line-height: 1.6;">
+                <p>Happy 19th birthday! May your day go well. I love you sm and I'm lucky to have you in my lifeee.</p>
+                <p>Pyar dikhane me maut ati hai mujhe, isliye esi harkte karke bata deti hoon ki ILY. Apke liye har cringe se cringe harkate krlu yaar. Mwah!</p>
+                <p>— Charu</p>
+            </div>
+            <button onclick="finalExplosion()" style="margin-top:30px; padding:10px 20px; border-radius:20px; border:none; background:red; color:white; cursor:pointer;">Close & Keep Forever ❤️</button>
+        </div>
+    </div>
+
+    <script>
+        // --- BLOW CANDLE LOGIC ---
+        function blowCandle() {
+            const flame = document.getElementById('flame');
+            flame.style.display = 'none';
+            
+            // Trigger Confetti
+            for (let i = 0; i < 100; i++) pieces.push(new Confetti());
+            animateConfetti();
+
+            setTimeout(() => {
+                document.getElementById('cake-scene').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('cake-scene').classList.add('hidden');
+                    startLetterScene();
+                }, 1000);
+            }, 1500);
+        }
+
+        function startLetterScene() {
+            document.body.style.backgroundColor = '#1a1a1a';
+            const ls = document.getElementById('letter-scene');
+            ls.style.display = 'flex';
+            document.getElementById('starCanvas').style.opacity = '1';
+            animateStars();
+        }
+
+        function openLetter() {
+            const wrapper = document.getElementById('env-wrap');
+            wrapper.classList.add('open-anim');
+            
+            setTimeout(() => {
+                wrapper.classList.add('hidden');
+                document.getElementById('letter-body').classList.add('show');
+            }, 800);
+        }
+
+        function finalExplosion() {
+            document.getElementById('letter-body').style.opacity = '0';
+            document.getElementById('heartCanvas').style.opacity = '1';
+            for (let i = 0; i < 150; i++) movingHearts.push(new FinalHeart(true));
+            animateFinalHearts();
+        }
+
+        // --- CANVAS ENGINES (Refined) ---
+        const confCanvas = document.getElementById('confetti-canvas');
+        const starCanvas = document.getElementById('starCanvas');
+        const heartCanvas = document.getElementById('heartCanvas');
+        const cCtx = confCanvas.getContext('2d');
+        const sCtx = starCanvas.getContext('2d');
+        const hCtx = heartCanvas.getContext('2d');
+
+        let pieces = [], starHearts = [], movingHearts = [];
+        function resize() {
+            confCanvas.width = starCanvas.width = heartCanvas.width = window.innerWidth;
+            confCanvas.height = starCanvas.height = heartCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize); resize();
+
+        class Confetti {
+            constructor() {
+                this.x = window.innerWidth / 2;
+                this.y = window.innerHeight / 2;
+                this.size = Math.random() * 8 + 4;
+                this.color = `hsl(${Math.random() * 360}, 70%, 70%)`;
+                this.speedX = (Math.random() - 0.5) * 15;
+                this.speedY = (Math.random() - 0.8) * 20;
+                this.gravity = 0.4;
+            }
+            update() { this.x += this.speedX; this.y += this.speedY; this.speedY += this.gravity; }
+            draw() {
+                cCtx.fillStyle = this.color;
+                cCtx.fillRect(this.x, this.y, this.size, this.size);
+            }
+        }
+
+        function animateConfetti() {
+            cCtx.clearRect(0,0,confCanvas.width, confCanvas.height);
+            pieces.forEach((p, i) => { p.update(); p.draw(); if(p.y > confCanvas.height) pieces.splice(i, 1); });
+            if(pieces.length > 0) requestAnimationFrame(animateConfetti);
+        }
+
+        // Star background logic remains mostly the same but added a twinkle
+        class Star {
+            constructor() { this.x = Math.random() * window.innerWidth; this.y = Math.random() * window.innerHeight; this.size = Math.random() * 2; }
+            draw() {
+                sCtx.fillStyle = `rgba(255,255,255,${Math.random()})`;
+                sCtx.beginPath(); sCtx.arc(this.x, this.y, this.size, 0, Math.PI*2); sCtx.fill();
+            }
+        }
+        for(let i=0; i<150; i++) starHearts.push(new Star());
+        function animateStars() {
+            sCtx.clearRect(0,0,starCanvas.width, starCanvas.height);
+            starHearts.forEach(s => s.draw());
+            requestAnimationFrame(animateStars);
+        }
+
+        class FinalHeart {
+            constructor() {
+                this.x = Math.random() * window.innerWidth;
+                this.y = window.innerHeight + 50;
+                this.size = Math.random() * 15 + 10;
+                this.speed = Math.random() * 3 + 2;
+            }
+            update() { this.y -= this.speed; }
+            draw() {
+                hCtx.fillStyle = "rgba(255, 0, 80, 0.6)";
+                hCtx.beginPath();
+                hCtx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+                hCtx.fill();
+            }
+        }
+        function animateFinalHearts() {
+            hCtx.clearRect(0,0,heartCanvas.width, heartCanvas.height);
+            movingHearts.forEach(h => { h.update(); h.draw(); });
+            requestAnimationFrame(animateFinalHearts);
+        }
+    </script>
+</body>
+</html>
